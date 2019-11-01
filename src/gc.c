@@ -1,5 +1,7 @@
 #include "gc.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 typedef struct Block Block;
 struct Block
