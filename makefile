@@ -1,8 +1,8 @@
-all: out lib test
+all: lib test
 
-lib: out/lib.a
+lib: out out/lib.a
 
-test: out/test-gc out/test-gc.string out/test-tree out/test-tree.remove
+test: out out/test-gc out/test-gc.string out/test-tree out/test-tree.remove
 
 clean:
 	rm -Rf out
