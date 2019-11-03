@@ -5,7 +5,7 @@ lib: out/lib.a
 test: out/test-gc out/test-gc.string out/test-tree out/test-tree.remove
 
 clean:
-	rm -R out
+	rm -Rf out
 
 out/%.o: src/%.c
 	gcc -c -o $@ $?
