@@ -8,6 +8,7 @@
 #define GC_BLOCK_END };
 
 #define GC_NEW_BLOCK(x) (x*)gc_new(offsetof(x,_gc_block_center)/sizeof(void*),sizeof(x)-offsetof(x,_gc_block_center),0)
+#define GC_NEW_BLOCK_GC(x,y) (x*)gc_new(offsetof(x,_gc_block_center)/sizeof(void*),sizeof(x)-offsetof(x,_gc_block_center),y)
 
 void* gc_new(size_t,size_t,void (*)(void*));
 void gc_mark(void*);
