@@ -1,5 +1,4 @@
 #include "tree.h"
-#include "gc.h"
 
 GC_BLOCK_START(Node)
   Node* less;
@@ -11,13 +10,15 @@ GC_BLOCK_END
 
 GC_BLOCK_START(Tree)
   Node* root;
+  GC gc;
 GC_BLOCK_CENTER
 GC_BLOCK_END
 
-void* tree_new()
+void* tree_new(GC gc)
 {
-  Tree* t=GC_NEW_BLOCK(Tree);
+  Tree* t=GC_NEW_BLOCK(gc,Tree);
   t->root=0;
+  t->gc=gc;
   return t;
 }
 
@@ -83,14 +84,14 @@ void* tree_set(void* root,const char* key,void* data)
   }
   while(*key)
   {
-    *n=GC_NEW_BLOCK(Node);
+    *n=GC_NEW_BLOCK(((Tree*)root)->gc,Node);
     (*n)->less=0;
     (*n)->more=0;
     (*n)->c=*key;
     n=&(*n)->data;
     key++;
   }
-  *n=GC_NEW_BLOCK(Node);
+  *n=GC_NEW_BLOCK(((Tree*)root)->gc,Node);
   (*n)->less=0;
   (*n)->more=0;
   (*n)->c=0;

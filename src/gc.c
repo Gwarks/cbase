@@ -5,7 +5,6 @@
 #include <stdio.h>
 #endif
 
-typedef struct Block Block;
 struct Block
 {
   Block* next;
@@ -14,14 +13,48 @@ struct Block
   void (*gc)(void*);
 };
 
-Block* head=0;
-int gen=1;
+struct Root
+{
+  Block* head;
+  int gen;
+};
 
-void* gc_new(size_t nptr,size_t nbyte,void (*gc)(void*))
+GC gc_create()
+{
+  struct Root* root=malloc(sizeof(struct Root));
+  root->head=0;
+  root->gen=1;
+  return root;
+}
+
+void gc_destroy(GC root)
+{
+  Block* b=root->head;
+  Block* n;
+  #ifdef DEBUG
+  printf("DESTROY START\n");
+  #endif  
+  while(b)
+  {
+    #ifdef DEBUG
+    printf("destroy %p\n",b);
+    #endif
+    if(b->gc)b->gc(b+1);
+    n=b->next;
+    free(b);
+    b=n;
+  }
+  #ifdef DEBUG
+  printf("DESTROY END\n");
+  #endif
+  free(root);
+}
+
+void* gc_new(GC root,size_t nptr,size_t nbyte,void (*gc)(void*))
 {
   Block* b=malloc(sizeof(Block)+sizeof(Block*)*nptr+nbyte);
-  b->next=head;
-  head=b;
+  b->next=root->head;
+  root->head=b;
   b->center=((Block**)(b+1))+nptr;
   b->gen=0;
   b->gc=gc;
@@ -31,53 +64,53 @@ void* gc_new(size_t nptr,size_t nbyte,void (*gc)(void*))
   return b+1;
 }
 
-void gc_mark(void* ptr)
+void gc_mark(GC root,void* ptr)
 {
   Block* b=((Block*)ptr)-1;
-  if(b->gen==gen)return;
-  b->gen=gen;
+  if(b->gen==root->gen)return;
+  b->gen=root->gen;
   #ifdef DEBUG
   printf("mark %p\n",b);
   #endif
   for(Block** p=(Block**)ptr;p<b->center;p++)
   {
-    if(*p)gc_mark(*p);
+    if(*p)gc_mark(root,*p);
   }
 }
 
-void gc_sweep()
+void gc_sweep(GC root)
 {
-  Block* b=head;
-  Block** lastptr=&head;
+  Block* b=root->head;
+  Block** lastptr=&root->head;
   #ifdef DEBUG
   printf("GC START\n");
   #endif
   while(b)
   {
-    if(b->gen==gen)
+    if(b->gen==root->gen)
     {
-       lastptr=&b->next;
-       b=b->next;
+      lastptr=&b->next;
+      b=b->next;
     }else{
-       *lastptr=b->next;
-       #ifdef DEBUG
-       printf("gc %p\n",b);
-       #endif
-       if(b->gc)b->gc(b+1);
-       free(b);
-       b=*lastptr;
+      *lastptr=b->next;
+      #ifdef DEBUG
+      printf("gc %p\n",b);
+      #endif
+      if(b->gc)b->gc(b+1);
+      free(b);
+      b=*lastptr;
     }
   }
   #ifdef DEBUG
   printf("GC END\n");
   #endif
-  gen+=2;
+  root->gen+=2;
 }
 
-char* gc_new_string(const char* c)
+char* gc_new_string(GC root,const char* c)
 {
   int l=strlen(c)+1;
-  char* p=gc_new(0,l,0);
+  char* p=gc_new(root,0,l,0);
   memcpy(p,c,l);
   return p;
 }
